@@ -1,0 +1,12 @@
+{
+  "name": "Flow Voice Controlled Browser Assistant",
+  "version": "1.0",
+  "description": "Flow by Borealis Technology helps you navigate the web seamlessly with voice.",
+  "background": {
+    "scripts": ["background.js"],
+    "persistent": true
+  },
+  "browser_action": {},
+  "permissions": ["tabs"],
+  "manifest_version": 2
+}
