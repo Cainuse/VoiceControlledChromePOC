@@ -1,34 +1,97 @@
-let currState = null;
-let availableStates = [
-  "normal",
-  "minimized",
-  "maximized",
-  "fullscreen",
-  "docked"
-];
+let dataCache = null;
+let scroll = null;
 async function start(tab) {
-  await refreshState();
-  chrome.windows.getCurrent(changeStateOfBrowser);
+  await refreshState(tab.id);
+  console.log("Hi");
 }
+/**
+ * Changes the display state of browser
+ * @param {*} win 
+ */
 
 async function changeStateOfBrowser(win) {
-  if (availableStates.includes(currState)) {
-    chrome.windows.update(win.id, { state: currState });
-    console.log(`Updating browser size to ${currState}`);
-  }
+  let availableStates = [
+    "normal",
+    "minimized",
+    "maximized",
+    "fullscreen",
+    "docked"
+  ];
 
-  console.log(win);
+  if (availableStates.includes(dataCache.windowState)) {
+    chrome.windows.update(win.id, { state: dataCache.windowState });
+    console.log(`Updating browser size to ${dataCache.windowState}`);
+  }
+  
 }
 
-async function refreshState() {
+/**
+ * Scrolls down on the highlighted tab
+ * @param {*} win 
+ */
+function scrollPage(tab){
+  // let spdMap = [
+  //   {key: "slow", val: 5},
+  //   {key: "middle", val: 10},
+  //   {key: "fast", val: 15},
+  //   {key: "lightning", val: 30}
+  // ]
+  let x = 0;
+  let y = 0;
+
+  switch(dataCache.page.scrollDir){
+    case "up":
+      x = 0;
+      y = -5;
+      break;
+    case "down":
+      x = 0;
+      y = 5;
+      break;
+    case "right":
+      x = 5;
+      y = 0;
+      break;
+    case "left":
+      x = -5;
+      y = 0;
+      break;
+  }
+  
+  if(dataCache.page.keepScrolling){
+    if(scroll!=null){
+      clearInterval(scroll);
+    }
+    scroll = setInterval(()=>{
+      chrome.tabs.executeScript(tab, {
+        code: `window.scrollBy({top: ${y}, left: ${x}, behavior: 'smooth'})`
+      })
+    },
+    100);
+  }
+  else{
+    if(scroll!=null){
+      clearInterval(scroll);
+    }
+    
+  }
+
+}
+
+/**
+ * Updates local variable from database *Very expensive function*
+ */
+async function refreshState(tab) {
   const response = await fetch(
     "https://flow-6c0f6.firebaseio.com/browser.json"
   );
   const responseJson = await response.json();
-  currState = responseJson.windowState;
-  console.log(currState);
-  chrome.windows.getCurrent(changeStateOfBrowser);
+  dataCache = responseJson;
+  //chrome.windows.getCurrent(changeStateOfBrowser);
+  
+  scrollPage(tab);
   setTimeout(refreshState, 1000);
 }
 
 chrome.browserAction.onClicked.addListener(start);
+
